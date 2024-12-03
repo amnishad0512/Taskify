@@ -8,7 +8,7 @@ const server = express();
 server.use(express.json());
 server.use(cookieParser());
 server.use(cors({
-    origin: 'http://localhost:5173', // Your frontend URL
+    origin: 'https://taskify.manojnishad.com', // Your frontend URL
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
