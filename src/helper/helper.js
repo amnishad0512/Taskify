@@ -105,9 +105,9 @@ export const sendEmail = async (type, recipientEmail, key) => {
 `
     };
 
-    const resetLink = `http://localhost:5173/set-password/${key}`;
+    const resetLink = `https://taskify.manojnishad.com/set-password/${key}`;
     const mailOptionPasswordReset = {
-        from: 'your-email@gmail.com',      // Sender's email
+        from: 'amnishad0512@gmail.com',      // Sender's email
         to: recipientEmail,                // Recipient's email
         subject: 'Password Reset - Taskify', // Subject of the email
         html: `
