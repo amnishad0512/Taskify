@@ -13,8 +13,20 @@ export const getUser = async (req, res) => {
 };
 
 export const createUser = async (req, res) => {
-    const result = await User.create(req.body);
-    res.status(201).json(result._id);
+    try {
+        // Check if user already exists with the same email
+        const existingUser = await User.findOne({ email: req.body.email });
+        if (existingUser) {
+            Response(res, false, 400, "User with this email already exists");
+            return
+        }
+
+        // If user doesn't exist, create new user
+        const result = await User.create(req.body);
+        Response(res, true, 201, "User created successfully", result._id);
+    } catch (error) {
+        Response(res, false, 400, "Something went wrong");
+    }
 };
 
 export const deleteUser = async (req, res) => {
@@ -34,5 +46,5 @@ export const updateUser = async (req, res) => {
         const user = await User.findByIdAndUpdate({ _id: userId }, { $set: req.body },{ new: true });
         const token = jwt.sign({ email: user.email }, process.env.SECRET_KEY, { expiresIn: '7d' });
         res.status(200).json({ token, user });
-}
+    }
 };
