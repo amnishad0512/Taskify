@@ -220,4 +220,3 @@ export const sendEmail = async (type, recipientEmail, key) => {
     });
 };
 
-

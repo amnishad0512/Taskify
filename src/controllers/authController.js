@@ -1,3 +1,4 @@
+import axios from "axios";
 import { generateOTP, Response, sendEmail } from "../helper/helper.js";
 import User from "../models/userModel.js";
 import bcrypt from 'bcrypt';
@@ -12,14 +13,77 @@ export const login = async (req, res) => {
     const user = await User.findOne({ email });
     if (user) {
         const isValidPassword = bcrypt.compareSync(password, user.password);
-        if (isValidPassword) {
+        const googleUser = user?.origin === 'Google';
+        if (isValidPassword || googleUser) {
             const token = jwt.sign({ email: user.email }, process.env.SECRET_KEY, { expiresIn: '7d' });
             res.status(200).json({ token, user });
         } else {
-            Response(res, false, 400, "Invalid credential");
+            Response(res, false, 400, "Email or password is incorrect");
         }
     } else {
-        Response(res, false, 400, "Invalid credential");
+        Response(res, false, 400, "Email or password is incorrect");
+    }
+};
+
+export const resetPassword = async (req, res) => {
+    const { token } = req.params;
+    const { newPassword, confirmPassword } = req.body;
+    if (newPassword !== confirmPassword) {
+        Response(res, false, 400, "Password and confirm password is not same");
+    } else {
+        try {
+            const decoded = jwt.verify(token, process.env.SECRET_KEY);
+            console.log('decoded:', decoded)
+            const user = await User.findOne({ email: decoded.email });
+            if (user) {
+                user.password = bcrypt.hashSync(newPassword, +process.env.SALT);
+                await user.save();
+                Response(res, true, 200, "Password reset successfully");
+            } else {
+                Response(res, false, 400, "Invalid token");
+            }
+
+        } catch (error) {
+            if (error instanceof jwt.JsonWebTokenError) {
+                Response(res, false, 400, "Invalid token signature");
+            } else if (error instanceof jwt.TokenExpiredError) {
+                Response(res, false, 400, "Token has expired");
+            } else {
+                Response(res, false, 400, "Failed to verify token");
+            }
+        }
+    }
+};
+
+export const googleLogin = async (req, res) => {
+    const { token } = req.body;
+    const userInfo = await axios
+        .get('https://www.googleapis.com/oauth2/v3/userinfo',
+            {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+    const { email, name, picture } = userInfo.data;
+    const user = await User.findOne({ email });
+    const authToken = jwt.sign({ email }, process.env.SECRET_KEY, { expiresIn: '7d' });
+    if (user) {
+        const userDetails = {
+            name,
+            image: picture,
+        };
+        const userData = await User.findByIdAndUpdate({ _id: user._id }, { $set: userDetails }, { new: true });
+        res.status(200).json({ authToken, userData });
+    } else {
+        const password = bcrypt.hashSync('google', +process.env.SALT);
+        const userDetails = {
+            name,
+            email,
+            image: picture,
+            password,
+            mobile: '',
+            origin: 'Google'
+        };
+        const user = await User.create(userDetails);
+        res.status(200).json({ authToken, user });
     }
 };
 
@@ -91,36 +155,6 @@ export const forgetPassword = async (req, res) => {
         }
     } else {
         Response(res, false, 400, "Email not exits");
-    }
-};
-
-export const resetPassword = async (req, res) => {
-    const { token } = req.params;
-    console.log('token:', token);
-    const { password, confirmPassword } = req.body;
-    if (password !== confirmPassword) {
-        Response(res, false, 400, "Password and confirm password is not same");
-    } else {
-        try {
-            const decoded = jwt.verify(token, process.env.SECRET_KEY);
-            const user = await User.findOne({ _id: decoded.userId });
-            if (user) {
-                user.password = bcrypt.hashSync(password, +process.env.SALT);
-                await user.save();
-                Response(res, true, 200, "Password reset successfully");
-            } else {
-                Response(res, false, 400, "Invalid token");
-            }
-
-        } catch (error) {
-            if (error instanceof jwt.JsonWebTokenError) {
-                Response(res, false, 400, "Invalid token signature");
-            } else if (error instanceof jwt.TokenExpiredError) {
-                Response(res, false, 400, "Token has expired");
-            } else {
-                Response(res, false, 400, "Failed to verify token");
-            }
-        }
     }
 };
 

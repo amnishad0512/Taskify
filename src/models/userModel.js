@@ -26,6 +26,16 @@ const userSchema = new Schema({
         type: String,
         enum: ["Admin", "User"],
         default: 'User',
+    },
+    theme: {
+        type: String,
+        enum: ["dark", "light"],
+        default: 'light',
+    },
+    lang: {
+        type: String,
+        enum: ["en", "hi"],
+        default: 'en',
     }
 }, { timestamps: true });
 

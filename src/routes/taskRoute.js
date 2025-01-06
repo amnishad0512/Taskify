@@ -8,7 +8,7 @@ taskRoute.get("/user/:userId", getAllTasksAgainstUser);
 taskRoute.get("/:taskId", getTask);
 taskRoute.post("/", createTask);
 taskRoute.delete("/:taskId", deleteTask);
-taskRoute.delete("/", authorization, deleteAllTask);
+taskRoute.delete("/", deleteAllTask);
 taskRoute.patch("/:taskId", updateTask);
 
 export default taskRoute;
