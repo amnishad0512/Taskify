@@ -135,6 +135,12 @@ export const registration = async (req, res) => {
     if (email in emailOTP) {
         Response(res, false, 403, "please verify the email");
     } else {
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            Response(res, false, 400, "User with this email already exists");
+            return;
+        }
+
         req.body.password = bcrypt.hashSync(password, +process.env.SALT);
         const user = await User.create(req.body);
         Response(res, true, 201, "user added successfully", user._id);
